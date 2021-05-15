@@ -2,7 +2,7 @@
 set -e
 LAMBDA_FILE="lambda.zip"
 
-rm -f ${LAMBDA_FILE}
+rm -f "deploy/${LAMBDA_FILE}"
 
 mkdir -p clamav
 
@@ -37,7 +37,7 @@ pushd ./bin
 zip -r9 ${LAMBDA_FILE} *
 popd
 
-cp bin/${LAMBDA_FILE} .
+cp bin/${LAMBDA_FILE} "deploy/${LAMBDA_FILE}"
 
 echo "-- Cleaning up bin folder --"
 rm -rf bin
