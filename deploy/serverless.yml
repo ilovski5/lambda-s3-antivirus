@@ -1,6 +1,11 @@
-service: <service>
+service: clam-av
 package:
   artifact: lambda.zip
+
+custom:
+  SOURCE_BUCKET_NAME: <files-source-bucket> #required
+  CLAMAV_BUCKET_NAME: <clamav-definitions-bucket> #required
+  PATH_TO_AV_DEFINITIONS: <av-definitions-directory> #required
 
 plugins:
   - serverless-iam-roles-per-function
@@ -13,8 +18,8 @@ provider:
   profile: <profile>
   logRetentionInDays: 30
   environment:
-    CLAMAV_BUCKET_NAME: <CLAMAV_BUCKET_NAME>
-    PATH_TO_AV_DEFINITIONS: <PATH_TO_AV_DEFINITIONS>
+    CLAMAV_BUCKET_NAME: ${self:custom.CLAMAV_BUCKET_NAME}
+    PATH_TO_AV_DEFINITIONS: ${self:custom.PATH_TO_AV_DEFINITIONS}
 
 functions:
   updateDefinitions:
@@ -32,13 +37,13 @@ functions:
           - s3:PutObject
           - s3:PutObjectTagging
           - s3:PutObjectVersionTagging
-        Resource: "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
+        Resource: !Join [ '', ['arn:aws:s3:::', '${self:custom.CLAMAV_BUCKET_NAME}', '/*' ] ]
       - Effect: "Allow"
         Action:
           - s3:ListBucket
         Resource:
-          - "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
-          - "arn:aws:s3:::<CLAMAV_BUCKET_NAME>"
+          - !Join [ '', ['arn:aws:s3:::', '${self:custom.CLAMAV_BUCKET_NAME}', '/*' ] ]
+          - !Join [ '', ['arn:aws:s3:::', '${self:custom.CLAMAV_BUCKET_NAME}' ] ]
   scanFile:
     handler: antivirus.lambdaHandleEvent
     memorySize: 2048
@@ -52,15 +57,22 @@ functions:
           - s3:GetObjectVersion
           - s3:PutObjectTagging
           - s3:PutObjectVersionTagging
-        Resource: "arn:aws:s3:::<SOURCE_BUCKET_NAME>/*"
+        Resource: !Join [ '', ['arn:aws:s3:::', '${self:custom.SOURCE_BUCKET_NAME}', '/*' ] ]
       - Effect: "Allow"
         Action:
           - s3:GetObject
           - s3:GetObjectTagging
-        Resource: "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
+        Resource: !Join [ '', ['arn:aws:s3:::', '${self:custom.CLAMAV_BUCKET_NAME}', '/*' ] ]
       - Effect: "Allow"
         Action:
           - s3:ListBucket
         Resource:
-          - "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
-          - "arn:aws:s3:::<CLAMAV_BUCKET_NAME>"
+          - !Join [ '', ['arn:aws:s3:::', '${self:custom.CLAMAV_BUCKET_NAME}', '/*' ] ]
+          - !Join [ '', ['arn:aws:s3:::', '${self:custom.CLAMAV_BUCKET_NAME}' ] ]
+
+resources:
+  Resources:
+    MyBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.CLAMAV_BUCKET_NAME}
