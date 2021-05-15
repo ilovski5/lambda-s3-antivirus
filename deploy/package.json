@@ -1,0 +1,10 @@
+{
+  "name": "lambda-s3-antivirus",
+  "version": "1.0.0",
+  "scripts": {
+    "deploy": "sls deploy"
+  },
+  "devDependencies": {
+    "serverless-iam-roles-per-function": "^3.1.0"
+  }
+}

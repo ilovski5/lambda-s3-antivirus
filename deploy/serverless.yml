@@ -1,0 +1,66 @@
+service: <service>
+package:
+  artifact: lambda.zip
+
+plugins:
+  - serverless-iam-roles-per-function
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: <region>
+  profile: <profile>
+  logRetentionInDays: 30
+  environment:
+    CLAMAV_BUCKET_NAME: <CLAMAV_BUCKET_NAME>
+    PATH_TO_AV_DEFINITIONS: <PATH_TO_AV_DEFINITIONS>
+
+functions:
+  updateDefinitions:
+    handler: download-definitions.lambdaHandleEvent
+    memorySize: 1024
+    timeout: 300
+    events:
+      - schedule: rate(12 hours)
+    iamRoleStatementsName: clamav-update-definitions-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - s3:GetObject
+          - s3:GetObjectTagging
+          - s3:PutObject
+          - s3:PutObjectTagging
+          - s3:PutObjectVersionTagging
+        Resource: "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
+      - Effect: "Allow"
+        Action:
+          - s3:ListBucket
+        Resource:
+          - "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
+          - "arn:aws:s3:::<CLAMAV_BUCKET_NAME>"
+  scanFile:
+    handler: antivirus.lambdaHandleEvent
+    memorySize: 2048
+    timeout: 300
+    iamRoleStatementsName: clamav-scan-s3-file-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - s3:GetObject
+          - s3:GetObjectTagging
+          - s3:GetObjectVersion
+          - s3:PutObjectTagging
+          - s3:PutObjectVersionTagging
+        Resource: "arn:aws:s3:::<SOURCE_BUCKET_NAME>/*"
+      - Effect: "Allow"
+        Action:
+          - s3:GetObject
+          - s3:GetObjectTagging
+        Resource: "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
+      - Effect: "Allow"
+        Action:
+          - s3:ListBucket
+        Resource:
+          - "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
+          - "arn:aws:s3:::<CLAMAV_BUCKET_NAME>"
