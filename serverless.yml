@@ -1,0 +1,29 @@
+service: <service>
+package:
+  artifact: lambda.zip
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: <region>
+  profile: <profile>
+  logRetentionInDays: 30
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - s3:*
+      Resource: "arn:aws:s3:::<CLAMAV_BUCKET_NAME>/*"
+  environment:
+    CLAMAV_BUCKET_NAME: <CLAMAV_BUCKET_NAME>
+    PATH_TO_AV_DEFINITIONS: <PATH_TO_AV_DEFINITIONS>
+
+functions:
+  updateDefinitions:
+    handler: download-definitions.lambdaHandleEvent
+    memorySize: 1024
+    timeout: 300
+  scanFile:
+    handler: antivirus.lambdaHandleEvent
+    memorySize: 2048
+    timeout: 300
